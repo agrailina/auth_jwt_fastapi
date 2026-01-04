@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель управления - FastAPI Auth</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            min-height: 100vh;
+            color: #2d3748;
+        }
+        
+        .navbar {
+            background: white;
+            padding: 1.2rem 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+        
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo::before {
+            content: "🔐";
+            font-size: 1.5rem;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        .username {
+            color: #4a5568;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        .logout-btn {
+            background: linear-gradient(135deg, #f56565 0%, #ed64a6 100%);
+            color: white;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(237, 100, 166, 0.3);
+        }
+        
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(237, 100, 166, 0.4);
+        }
+        
+        .logout-btn::before {
+            content: "🚪";
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+        
+        .welcome-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 3rem;
+            border-radius: 24px;
+            margin-bottom: 2.5rem;
+            box-shadow: 0 20px 60px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .welcome-card::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 30px 30px;
+            opacity: 0.3;
+            animation: float 20s linear infinite;
+        }
+        
+        @keyframes float {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .welcome-card h1 {
+            font-size: 2.8rem;
+            margin-bottom: 1rem;
+            font-weight: 800;
+            position: relative;
+        }
+        
+        .welcome-card p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            line-height: 1.6;
+            position: relative;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 220px;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+        }
+        
+        .stat-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1.2rem;
+            display: block;
+        }
+        
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            max-width: 100%;
+            line-height: 1.3;
+        }
+        
+        .email-text {
+            font-size: 1.2rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            line-height: 1.4;
+            max-height: 2.8rem;
+        }
+        
+        .stat-label {
+            color: #718096;
+            font-size: 0.95rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: auto;
+        }
+        
+        .info-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        
+        .info-card h2 {
+            color: #2d3748;
+            margin-bottom: 2rem;
+            font-size: 1.8rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .info-card h2::before {
+            content: "📋";
+            font-size: 1.5rem;
+        }
+        
+        .user-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .detail-item {
+            padding: 1.5rem;
+            background: #f8fafc;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+        
+        .detail-item:hover {
+            background: #edf2f7;
+            transform: translateX(5px);
+        }
+        
+        .detail-label {
+            color: #718096;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .detail-value {
+            color: #2d3748;
+            font-size: 1.2rem;
+            font-weight: 600;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            line-height: 1.4;
+        }
+        
+        .email-value {
+            font-size: 1.1rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            max-height: 2.8rem;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .status-active {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border: 2px solid rgba(16, 185, 129, 0.2);
+        }
+        
+        .status-inactive {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 2px solid rgba(239, 68, 68, 0.2);
+        }
+        
+        .alert {
+            background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+            color: #1e40af;
+            padding: 1.5rem;
+            border-radius: 16px;
+            margin-top: 2rem;
+            border-left: 6px solid #3b82f6;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            animation: slideIn 0.5s ease;
+        }
+        
+        .alert::before {
+            content: "ℹ️";
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+        
+        .alert-content {
+            flex: 1;
+        }
+        
+        .alert strong {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+        
+        .alert p {
+            margin: 0;
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .actions-panel {
+            background: white;
+            padding: 2rem;
+            border-radius: 20px;
+            margin-top: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        
+        .actions-panel h3 {
+            color: #2d3748;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .actions-panel h3::before {
+            content: "⚡";
+        }
+        
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .action-btn {
+            padding: 1.2rem;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #4a5568;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-align: center;
+        }
+        
+        .action-btn:hover {
+            background: #edf2f7;
+            transform: translateY(-2px);
+            border-color: #667eea;
+            color: #667eea;
+        }
+        
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 1rem;
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .user-info {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .welcome-card {
+                padding: 2rem 1.5rem;
+            }
+            
+            .welcome-card h1 {
+                font-size: 2rem;
+            }
+            
+            .container {
+                padding: 0 1rem;
+                margin: 1rem auto;
+            }
+            
+            .stat-card {
+                padding: 1.5rem;
+                min-height: 180px;
+            }
+            
+            .info-card {
+                padding: 1.5rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .user-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .welcome-card h1 {
+                font-size: 1.8rem;
+            }
+            
+            .welcome-card p {
+                font-size: 1rem;
+            }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.8s ease;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body class="fade-in">
+    <nav class="navbar">
+        <a href="/" class="logo">FastAPI Auth</a>
+        <div class="user-info">
+            <div class="user-avatar">
+                {{ user.username[0]|upper }}
+            </div>
+            <span class="username">👤 {{ user.username }}</span>
+            <form id="logoutForm" action="/api/logout" method="POST">
+                <button type="submit" class="logout-btn">Выйти</button>
+            </form>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="welcome-card">
+            <h1>Добро пожаловать, {{ user.username }}! 👋</h1>
+            <p>Вы успешно вошли в систему. Здесь вы можете управлять своим аккаунтом и настройками безопасности.</p>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-number">
+                    {% if user.is_active %}
+                        Активен
+                    {% else %}
+                        Неактивен
+                    {% endif %}
+                </div>
+                <div class="stat-label">Статус аккаунта</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">📅</div>
+                <div class="stat-number">
+                    {% if user.created_at %}
+                        {{ user.created_at.strftime('%d.%m.%Y') }}
+                    {% else %}
+                        Не указана
+                    {% endif %}
+                </div>
+                <div class="stat-label">Дата регистрации</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">✉️</div>
+                <div class="stat-number email-text" title="{{ user.email }}">
+                    {{ user.email }}
+                </div>
+                <div class="stat-label">Email адрес</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">🛡️</div>
+                <div class="stat-number">JWT</div>
+                <div class="stat-label">Тип аутентификации</div>
+            </div>
+        </div>
+        
+        <div class="info-card">
+            <h2>Информация об аккаунте</h2>
+            <div class="user-details">
+                <div class="detail-item">
+                    <div class="detail-label">🆔 ID пользователя</div>
+                    <div class="detail-value">{{ user.id }}</div>
+                </div>
+                
+                <div class="detail-item">
+                    <div class="detail-label">👤 Имя пользователя</div>
+                    <div class="detail-value">{{ user.username }}</div>
+                </div>
+                
+                <div class="detail-item">
+                    <div class="detail-label">📧 Email</div>
+                    <div class="detail-value email-value" title="{{ user.email }}">
+                        {{ user.email }}
+                    </div>
+                </div>
+                
+                <div class="detail-item">
+                    <div class="detail-label">📊 Статус</div>
+                    <div class="detail-value">
+                        {% if user.is_active %}
+                            <span class="status-badge status-active">Активен</span>
+                        {% else %}
+                            <span class="status-badge status-inactive">Неактивен</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="alert">
+                <div class="alert-content">
+                    <strong>Информация о безопасности</strong>
+                    <p>Ваша сессия защищена JWT токенами. Токен автоматически обновляется и хранится в защищенных cookies. Для выхода из системы используйте кнопку "Выйти".</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="actions-panel">
+            <h3>Быстрые действия</h3>
+            <div class="actions-grid">
+                <button class="action-btn" onclick="copyUserInfo()">
+                    <span>📋</span> Копировать ID
+                </button>
+                <button class="action-btn" onclick="showEmail()">
+                    <span>👁️</span> Показать email
+                </button>
+                <button class="action-btn" onclick="refreshPage()">
+                    <span>🔄</span> Обновить данные
+                </button>
+                <a href="/" class="action-btn">
+                    <span>🏠</span> На главную
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('logoutForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            try {
+                const response = await fetch('/api/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok || response.redirected) {
+                    window.location.href = '/';
+                } else {
+                    console.error('Ошибка при выходе:', response.status);
+                }
+            } catch (error) {
+                console.error('Ошибка при выходе:', error);
+            }
+        });
+        
+        function copyUserInfo() {
+            const userId = document.querySelector('.detail-item:nth-child(1) .detail-value').textContent;
+            navigator.clipboard.writeText(userId).then(() => {
+                showToast('ID скопирован в буфер обмена!');
+            });
+        }
+        
+        function showEmail() {
+            const email = "{{ user.email }}";
+            showToast(`Ваш email: ${email}`);
+        }
+        
+        function refreshPage() {
+            window.location.reload();
+        }
+        
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 12px;
+                box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+                z-index: 1000;
+                animation: slideInRight 0.3s ease;
+                font-weight: 600;
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 300);
+            }, 3000);
+        }
+        
+        // Добавляем стили для анимации toast
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInRight {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            
+            @keyframes slideOutRight {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+            
+            .toast {
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 12px;
+                box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+                z-index: 1000;
+                animation: slideInRight 0.3s ease;
+                font-weight: 600;
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Добавляем эффект наведения на карточки
+        document.querySelectorAll('.stat-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-8px)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0)';
+            });
+        });
+        
+        // Показываем полный email при клике на усеченный
+        document.querySelectorAll('.email-value, .email-text').forEach(element => {
+            element.addEventListener('click', function() {
+                const fullEmail = this.getAttribute('title');
+                if (fullEmail && fullEmail !== this.textContent.trim()) {
+                    showToast(`Полный email: ${fullEmail}`);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
